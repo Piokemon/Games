@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pl">
+    <head>
+        <title>Komar Invaders</title>
+        <meta charset="utf-8">
+        <style>
+            progress{
+                appearance: none;
+                -moz-appearance: none;
+                -webkit-appearance: none;
+                position: absolute;
+                width: 260px;
+                left: calc(50% - 130px);
+                height: 15px;
+                border:none;
+                margin-top: 10px;
+            }
+            progress {/* IE10 */
+                color: red;
+            }
+            progress::-moz-progress-bar { /* Firefox */
+                background: red;  
+            }
+            progress::-webkit-progress-value { /* Chrome */
+                background: red;
+            }
+            html{
+                text-align: center;
+                background: radial-gradient(darkblue, blue,lightblue);
+                height: 100%;
+                width: 100%;
+                font-family: Arial;
+            }
+            h2{
+                position: relative;
+                top: -60px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1 style="color: lightgreen; text-shadow: 1px 1px 15px #000000;">Komar Invaders by Piokemon</h1>
+        <canvas id="plansza" style="background: radial-gradient(lightgreen, green); border: black 3px solid" width=600px height=600px></canvas>
+        <progress min="0" max="100" value="100" id="pk"></progress>
+        <h2 id="pkt"> Punkty: 0 </h2>
+        <script type="text/javascript">
+            var plansza_gry = document.getElementById("plansza");
+            var rysowanie = plansza_gry.getContext("2d");
+            var komary = new Array(100);
+            var kom_cel = new Array(100);
+            var krok = new Array(100);
+            var czas_zdychania = new Array(100);
+            var punkty_krwi = document.getElementById("pk");
+            var reload;
+            var twarz_x;
+            var twarz_y;
+            var roz_x;
+            var roz_y;
+            var twarz;
+            var komar;
+            var kom_roz_x;
+            var kom_roz_y;
+            var celownik;
+            var cel_x;
+            var cel_y;
+            var cel_roz_x;
+            var cel_roz_y;
+            var KeyState = {};
+            var krew;
+            var punkty;
+            window.addEventListener('keydown',function(e){
+            KeyState[e.keyCode || e.which] = true;
+        },true);    
+        window.addEventListener('keyup',function(e){
+            KeyState[e.keyCode || e.which] = false;
+        },true);
+            function new_komar(){
+                for (var x=0;x<100;x++){
+                    if ((komary[x][0] == 0) && (komary[x][1] == 0) && (czas_zdychania[x] == 0)){
+                        komary[x][1] = Math.floor(Math.random() * 4);
+                        if (komary[x][1] == 0){
+                            komary[x][0] =-45;
+                            komary[x][1] = Math.floor(Math.random() * plansza_gry.height) + 5;
+                        }
+                        else if (komary[x][1] == 1){
+                            komary[x][0] = plansza_gry.width + 5;
+                            komary[x][1] = Math.floor(Math.random() * plansza_gry.height) + 5;
+                        }
+                        else if (komary[x][1] == 2){
+                            komary[x][0] = Math.floor(Math.random() * plansza_gry.width) + 5;
+                            komary[x][1] = -45;
+                        }
+                        else{
+                            komary[x][0] = Math.floor(Math.random() * plansza_gry.width) + 5;
+                            komary[x][1] = plansza_gry.height + 5;
+                        }
+                        //rysowanie.rect(twarz_x+60, twarz_y+70, roz_x-105, roz_y-190);
+                        kom_cel[x][0] = Math.floor(Math.random() * (roz_x - 105)) + twarz_x + 60;
+                        kom_cel[x][1] = Math.floor(Math.random() * (roz_y - 190)) + twarz_y + 70;
+                        krok[x][0] =(komary[x][0] - kom_cel[x][0]) / 100;
+                        krok[x][1] = (komary[x][1] - kom_cel[x][1]) / 100;
+                        czas_zdychania[x] = -1;
+                        return;
+                    }
+                }
+            }
+            function rys_kom(){
+                for (var x=0;x<100;x++){
+                    if ((komary[x][0] > 0) && (komary[x][1] > 0)){
+                        if (czas_zdychania[x] == -1){
+                            rysowanie.drawImage(komar, Math.floor(komary[x][0]), Math.floor(komary[x][1]), kom_roz_x, kom_roz_y);
+                        }
+                        else{
+                            if (czas_zdychania[x] == 0){
+                                komary[x][0] = 0;
+                                komary[x][1] = 0;
+                                continue;
+                            }
+                            rysowanie.drawImage(krew, Math.floor(komary[x][0]), Math.floor(komary[x][1]), kom_roz_x, kom_roz_y);
+                            czas_zdychania[x] -= 1;
+                        }
+                    }
+                }
+            }
+            function ruch_gracz(){
+                if (KeyState[32]){
+                    for (var x=0;x<100;x++){
+                        if ((komary[x][0] == 0) && (komary[x][1] == 0) ){
+                            continue;
+                        }
+                        if (czas_zdychania[x] != -1){
+                            continue;
+                        }
+                        if ((komary[x][0] < cel_x) && (cel_x < komary[x][0] + kom_roz_x) && (komary[x][1] < cel_y) && (cel_y < komary[x][1] + kom_roz_y)){
+                            rysowanie.drawImage(krew,komary[x][0], komary[x][1], kom_roz_x, kom_roz_y);
+                            punkty+=1;
+                            document.getElementById("pkt").innerHTML = "Punkty: " + punkty;
+                            czas_zdychania[x] = 50;
+                        }
+                        if ((komary[x][0]< cel_x + cel_roz_x) && (cel_x + cel_roz_x< komary[x][0] + kom_roz_x) && (komary[x][1] < cel_y) && (cel_y < komary[x][1] + kom_roz_y)){
+                            rysowanie.drawImage(krew,komary[x][0], komary[x][1], kom_roz_x, kom_roz_y);
+                            punkty+=1;
+                            document.getElementById("pkt").innerHTML = "Punkty: " + punkty;
+                            czas_zdychania[x] = 50;
+                        }
+                        if ((komary[x][0] < cel_x) && (cel_x < komary[x][0] + kom_roz_x) && (komary[x][1] < cel_y +cel_roz_y) && (cel_y + cel_roz_y< komary[x][1] + kom_roz_y)){
+                            rysowanie.drawImage(krew,komary[x][0], komary[x][1], kom_roz_x, kom_roz_y);
+                            punkty+=1;
+                            document.getElementById("pkt").innerHTML = "Punkty: " + punkty;
+                            czas_zdychania[x] = 50;
+                        }
+                        if ((komary[x][0] < cel_x + cel_roz_x) && (cel_x + cel_roz_x < komary[x][0] + kom_roz_x) && (komary[x][1] < cel_y + cel_roz_y) && (cel_y + cel_roz_y< komary[x][1] + kom_roz_y)){
+                            rysowanie.drawImage(krew,komary[x][0], komary[x][1], kom_roz_x, kom_roz_y);
+                            punkty+=1;
+                            document.getElementById("pkt").innerHTML = "Punkty: " + punkty;
+                            czas_zdychania[x] = 50;
+                        }
+                    }
+                }
+                if (KeyState[37]){
+                    if (cel_x > 3){cel_x -= 3;}
+                }
+                if (KeyState[38]){
+                    if (cel_y > 3){cel_y -= 3;}
+                }
+                if (KeyState[39]){
+                    if (cel_x + cel_roz_x + 3< plansza_gry.width){cel_x += 3;}
+                }
+                if (KeyState[40]){
+                    if (cel_y + cel_roz_y + 3 < plansza_gry.height){cel_y += 3;}
+                }
+            }
+            function ruch_kom(){
+                for (var x=0;x<100;x++){
+                    if ((komary[x][0] > 0) && (komary[x][1] > 0) && (czas_zdychania[x] == -1)){
+                        //rysowanie.rect(twarz_x+60, twarz_y+70, roz_x-105, roz_y-190);
+                        if ((komary[x][0] != kom_cel[x][0]) || (komary[x][0] != kom_cel[x][0])){
+                            if (Math.abs(kom_cel[x][0] - komary[x][0]) > 3){
+                                komary[x][0] -= krok[x][0];
+                            }
+                            if((Math.abs(kom_cel[x][1] - komary[x][1])) > 3){
+                                komary[x][1] -= krok[x][1];
+                            }
+                        }
+                        if ((twarz_x + 60 < komary[x][0]) && (komary[x][0] < twarz_x + roz_x - 45)){
+                            if ((twarz_y + 70 < komary[x][1]) && (komary[x][1] < twarz_y + roz_y - 120)){
+                                punkty_krwi.value -= 0.07;
+                            }
+                        }
+                    }
+                    
+                }
+            }
+            function ustaw_pocz(){
+                for (var x=0;x<100;x++){
+                    komary[x]= new Array(2);
+                    komary[x][0] = 0;
+                    komary[x][1] = 0;
+                    krok[x]= new Array(2);
+                    krok[x][0] = 0;
+                    krok[x][1] = 0;
+                    kom_cel[x]= new Array(2);
+                    kom_cel[x][0] = 0;
+                    kom_cel[x][1] = 0;
+                    czas_zdychania[x] = 0;
+                }
+                punkty_krwi.value = 100;
+                reload = 1;
+                roz_x = 400;
+                roz_y = 400;
+                twarz_x = plansza_gry.width/2 - roz_x/2;
+                twarz_y = plansza_gry.height/2 - roz_y/2;
+                komar = new Image();
+                komar.src = "komar.png";
+                twarz = new Image();
+                twarz.src = "twarz.webp";
+                celownik = new Image();
+                celownik.src = "celownik.png";
+                krew = new Image();
+                krew.src="krew.png";
+                kom_roz_x = 40;
+                kom_roz_y = 40;
+                cel_x = 20;
+                cel_y = 20;
+                cel_roz_x = 30;
+                cel_roz_y = 30;
+                punkty = 0;
+            }
+            function animacja(){
+                if (punkty_krwi.value <= 0){
+                    return;
+                }
+                rysowanie.clearRect(0,0, plansza_gry.width, plansza_gry.height);
+                rysowanie.drawImage(twarz, twarz_x, twarz_y, roz_x,roz_y);
+                rysowanie.beginPath();
+                
+                rysowanie.stroke();
+                rysowanie.closePath();
+                reload -= 1;
+                rys_kom();
+                if (reload == 0){
+                    reload = 30;
+                    new_komar();
+                }
+                ruch_gracz();
+                ruch_kom();
+                rysowanie.drawImage(celownik, cel_x, cel_y, cel_roz_x, cel_roz_y);
+            }
+            ustaw_pocz();
+            setInterval(animacja, 10);
+            
+        </script>
+    </body>
+</html>
