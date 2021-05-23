@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="pl">
+    <head>
+        <title>Space invaders</title>
+        <meta charset="utf-8">
+        <style>
+            html{
+				background: radial-gradient(#0099ff,#323232);
+                font-family: "Arial";
+                height:100%;
+                text-align: center;
+			}
+            progress{
+                appearance: none;
+                -moz-appearance: none;
+                -webkit-appearance: none;
+                position: absolute;
+                width: 180px;
+                left: calc(50% - 90px);
+                height: 10px;
+                border:none;
+            }
+            progress {/* IE10 */
+                color: red;
+            }
+            progress::-moz-progress-bar { /* Firefox */
+                background: red;  
+            }
+            progress::-webkit-progress-value { /* Chrome */
+                background: red;
+            }
+
+        </style>
+    </head>
+    <body>
+        <h1 style="color: #0099ff; text-shadow: 1px 1px 15px #000000;">Space Invaders by Piokemon</h1>
+        <progress id="pz_wrog" value="5" min="0" max="5" style="top:110px; "></progress>
+        <br>
+        <canvas width="500" height="600" id="plansza" style="background-color: black; border: 1px solid white;"></canvas>
+        <br>
+        <progress min="0" max="10" value="10" id="pz_statek" style="top:676px"></progress>
+        <h2 id="punkty">Punkty: 0</h2>
+        <script type="text/javascript">
+        var plansza_gry = document.getElementById("plansza");
+		var rysowanie = plansza_gry.getContext("2d");
+        var pz_statek = document.getElementById("pz_statek");
+		var pz_wrog = document.getElementById("pz_wrog");
+        var statek_x;
+        var statek_y;
+        var roz_x;
+        var roz_y;
+        var punkty;
+        var pocisk_wsp = new Array(100);
+        var roz_poc_x;
+        var roz_poc_y;
+        var uchwyt;
+        var pred_poc_y;
+        var statek_img;
+        var wrog1_img;
+        var wrog2_img;
+        var wrog3_img;
+        var pocisk_img;
+        var pociskRev_img;
+        var wybuch_img;
+        var wrog_x;
+        var wrog_y;
+        var ile_gwiazd = 70;
+        var ktory_wrog;
+        var ruch_wroga;
+        var gwiazdy_x = new Array(ile_gwiazd);
+        var gwiazdy_y = new Array(ile_gwiazd);
+        var KeyState = {};
+        var reload;
+        var mutacja;
+        var pred_wrog;
+        var ile_pocisk_wrog;
+        window.addEventListener('keydown',function(e){
+            KeyState[e.keyCode || e.which] = true;
+        },true);    
+        window.addEventListener('keyup',function(e){
+            KeyState[e.keyCode || e.which] = false;
+        },true);
+        document.body.onkeyup = function(e){
+            if(e.keyCode == 32){
+                strzal(1);
+            }
+        }
+        function rys_poc(){
+            for (x = 0; x<2; x++){
+                if ((pocisk_wsp[x][0] == 0) && (pocisk_wsp[x][1] == 0)){
+                    continue;
+                }
+                rysowanie.drawImage(pocisk_img, pocisk_wsp[x][0], pocisk_wsp[x][1], roz_poc_x, roz_poc_y);
+                pocisk_wsp[x][1] = pocisk_wsp[x][1] - pred_poc_y;
+                if (pocisk_wsp[x][1] < wrog_y + roz_y){
+                    if((wrog_x <= pocisk_wsp[x][0]) && (pocisk_wsp[x][0] <= wrog_x + roz_x)){
+                        punkty += 1;
+                        document.getElementById("punkty").innerHTML = "Punkty: " + punkty;
+                        if(pz_wrog.value == 1){
+                            ktory_wrog += 1;
+                            if (ktory_wrog == 5){
+                                ktory_wrog = 2;
+                                pz_wrog.max += 1;
+                                mutacja = Math.floor(Math.random() * 2);
+                                if (mutacja == 0){
+                                    pz_wrog.max += 1;
+                                }
+                                if (mutacja == 1){
+                                    ile_pocisk_wrog += 1;
+                                }
+                                if (mutacja == 2){
+                                    pred_wrog += 1;
+                                }
+                                if (pz_statek.value < 10){
+                                    pz_statek.value += 1;
+                                }
+                            }
+                            pz_wrog.value = pz_wrog.max;
+                            rys_wybuch(pocisk_wsp[x][0], pocisk_wsp[x][1], 2);
+                        }
+                        else{
+                            pz_wrog.value -= 1;
+                            rys_wybuch(pocisk_wsp[x][0], pocisk_wsp[x][1], 1);
+                        }
+                        strzal(2);
+                    }
+                    rys_wybuch(pocisk_wsp[x][0], pocisk_wsp[x][1], 1);
+                    pocisk_wsp[x][0] = 0;
+                    pocisk_wsp[x][1] = 0;
+                }
+            }
+            for (x = 2; x<2 + ile_pocisk_wrog;x++){
+                if ((pocisk_wsp[x][0] == 0) && (pocisk_wsp[x][1] == 0)){
+                    continue;
+                }
+                rysowanie.drawImage(pociskRev_img, pocisk_wsp[x][0], pocisk_wsp[x][1], roz_poc_x, roz_poc_y);
+                pocisk_wsp[x][1] = pocisk_wsp[x][1] + pred_poc_y;
+                if (pocisk_wsp[x][1] > statek_y){
+                    if((statek_x <= pocisk_wsp[x][0]) && (pocisk_wsp[x][0] <= statek_x + roz_x)){
+                        pz_statek.value -= 1;
+                        if (pz_statek.value > 1){
+                            rys_wybuch(pocisk_wsp[x][0], pocisk_wsp[x][1], 1);
+                        }
+                        else{
+                            rys_wybuch(pocisk_wsp[x][0],pocisk_wsp[x][1], 2);
+                        }
+                    }
+                    rys_wybuch(pocisk_wsp[x][0], pocisk_wsp[x][1], 1);
+                    pocisk_wsp[x][0] = 0;
+                    pocisk_wsp[x][1] = 0;
+            }
+        }
+        }
+        function iq_wroga(){
+            if (ruch_wroga > 0){
+                if (wrog_x + 2 + roz_x < plansza_gry.width){
+                    wrog_x += pred_wrog;
+                }
+                else{
+                    ruch_wroga = 1;
+                }
+                ruch_wroga -= 1;
+            }
+            else if (ruch_wroga < 0){
+                if (wrog_x > 2){
+                    wrog_x -= pred_wrog;
+                }
+                else{
+                    ruch_wroga = -1;
+                }
+                ruch_wroga += 1;
+            }
+            else{
+                ruch_wroga = Math.round(Math.random() * 90) - 45;
+            }
+            if (reload > 0){
+                reload -= 1;
+                return;
+            }
+            strzal(2);
+            reload = Math.round(Math.random() * 15) + 8;
+        }
+        function los_gwiazd(x){
+            gwiazdy_x[x] = Math.random() * (plansza_gry.width - 10) + 5;
+            gwiazdy_y[x] = Math.random() * (plansza_gry.height - 10) + 5;
+        }
+        function ustaw_pocz(){
+            punkty =0;
+            statek_img = new Image();
+            statek_img.src = "ship1.png";
+            wrog1_img = new Image();
+            wrog1_img.src = "ship2.png";
+            wrog2_img = new Image();
+            wrog2_img.src = "ship3.png";
+            wrog3_img = new Image();
+            wrog3_img.src = "ship4.png";
+            pocisk_img = new Image();
+            pocisk_img.src = "pocisk.png";
+            wybuch_img = new Image();
+            wybuch_img.src = "explosion.png";
+            pociskRev_img = new Image();
+            pociskRev_img.src = "pocisk_reverse.png";
+            roz_x = 60;
+            roz_y = 82;
+            wrog_y = 35;
+            reload = 0;
+            ile_pocisk_wrog = 3;
+            wrog_x = Math.random() * (plansza_gry.width - 82);
+            statek_x = plansza_gry.width / 2 - roz_x/2;
+            statek_y=plansza_gry.height - 25 - roz_y;
+            ktory_wrog = 2;
+            ruch_wroga = 0;
+            pred_wrog = 2;
+            roz_poc_x = 5;
+            roz_poc_y = 20;
+            //pocisk_x = statek_x + roz_x / 2 - 2;
+            //pocisk_y = statek_y - roz_poc_y + 25;
+            pred_poc_y = 4;
+            for (x = 0;x<ile_gwiazd;x++){
+                los_gwiazd(x);
+            }
+            for (x = 0;x<100;x++){
+                pocisk_wsp[x] = new Array(2);
+                pocisk_wsp[x][0] = 0;
+                pocisk_wsp[x][1] = 0;
+            }
+        }
+        function rys_gwiazdy(){
+            rysowanie.fillStyle= "gray";
+            for (x = 0;x<10;x++){
+                rysowanie.fillRect(gwiazdy_x[x],gwiazdy_y[x],3,3);
+            }
+            for (x = 10;x<30;x++){
+                rysowanie.fillRect(gwiazdy_x[x],gwiazdy_y[x],2,2);
+            }
+            for (x = 30;x<70;x++){
+                rysowanie.fillRect(gwiazdy_x[x],gwiazdy_y[x],1,1);
+            }
+        }
+        function rys_statek(){
+            rysowanie.drawImage(statek_img, statek_x, statek_y, roz_x, roz_y);
+        }
+        function rys_wrog(x){
+            if (x == 2){
+                rysowanie.drawImage(wrog1_img, wrog_x, wrog_y, roz_x, roz_y);
+            }
+            if (x == 3){
+                rysowanie.drawImage(wrog2_img, wrog_x, wrog_y, roz_x, roz_y);
+            }
+            if (x == 4){
+                rysowanie.drawImage(wrog3_img, wrog_x, wrog_y, roz_x, roz_y);
+            }
+        }
+        function rys_wybuch(x, y, sila){
+            if (sila == 1){
+                rysowanie.drawImage(wybuch_img, x-15, y-15, 30, 30);
+            }
+            else{
+                rysowanie.drawImage(wybuch_img, x-50, y-50, 100, 100);
+            }
+        }
+        function animacja(){
+            if (pz_statek.value > 0){
+                rysowanie.clearRect(0,0,plansza_gry.width, plansza_gry.height);
+                rys_gwiazdy();
+                rys_statek();
+                iq_wroga();
+                rys_wrog(ktory_wrog);
+                rys_poc();
+                if (KeyState[37] || KeyState[65]){
+                    if (statek_x - 2 > 0){
+                        statek_x -= 2;
+                    }
+                }
+                if (KeyState[39] || KeyState[68]){
+                    if (statek_x + roz_x + 2 < plansza_gry.width){
+                        statek_x += 2;
+                    }
+                }
+            }
+        }
+        function strzal(kto){
+            if (kto == 1){
+                if ((pocisk_wsp[0][0] == 0) && (pocisk_wsp[0][1] == 0)){
+                    pocisk_wsp[0][0] = statek_x + roz_x / 2 - 2;
+                    pocisk_wsp[0][1] = statek_y - roz_poc_y + 25;
+                }
+                else if ((pocisk_wsp[1][0] == 0) && (pocisk_wsp[1][1] == 0)){
+                    pocisk_wsp[1][0] = statek_x + roz_x / 2 - 2;
+                    pocisk_wsp[1][1] = statek_y - roz_poc_y + 25;
+                }
+            }
+            else{
+                for (var z = 2;z<ile_pocisk_wrog + 2;z++){
+                    if ((pocisk_wsp[z][0] == 0) && (pocisk_wsp[z][1] == 0)){
+                        pocisk_wsp[z][0] = wrog_x + roz_x / 2 - 2;
+                        pocisk_wsp[z][1] = wrog_y + roz_poc_y - 25;
+                        return;
+                    }
+                }
+            }
+        }
+        ustaw_pocz();
+        uchwyt = setInterval(animacja, 10);
+        
+
+        // https://toppng.com/free-image/top-down-spaceship-png-clip-top-down-spaceship-PNG-free-PNG-Images_166864
+        </script>
+
+    </body>
+</html>
